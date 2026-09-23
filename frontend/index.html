@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1a2744">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/manifest.json">
+  <title>CUP 모바일 학생증</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #1a2744;
+      --primary-light: #2a3f66;
+      --accent: #d4a843;
+      --bg: #eef1f6;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --text-sub: #777;
+      --text-hint: #aaa;
+      --border: #e8e8e8;
+      --error: #e74c3c;
+      --shadow: 0 4px 20px rgba(0,0,0,0.08);
+      --radius: 16px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html { height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      min-height: 100%;
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+      transition: background 0.4s, color 0.3s;
+    }
+
+    /* ── Screens ── */
+    .screen {
+      display: none;
+      min-height: 100dvh;
+      opacity: 0;
+    }
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+      animation: fadeIn 0.35s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
+    @keyframes qrRefresh {
+      0% { opacity: 0; transform: scale(0.8) rotate(-5deg); }
+      100% { opacity: 1; transform: scale(1) rotate(0); }
+    }
+
+    @keyframes countdownPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+
+    /* ══════════════════════════════════════════════
+       LOGIN SCREEN
+    ══════════════════════════════════════════════ */
+    #login-screen {
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: linear-gradient(160deg, #1a2744 0%, #2a4a7a 100%);
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--card);
+      border-radius: 20px;
+      padding: 40px 28px 32px;
+      box-shadow: var(--shadow);
+      animation: slideUp 0.5s ease;
+    }
+
+    .login-brand {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .login-brand .logo-icon {
+      width: 60px; height: 60px;
+      background: var(--primary);
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      font-size: 28px;
+      animation: scaleIn 0.6s ease 0.1s both;
+    }
+    .login-brand h1 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: -0.5px;
+    }
+    .login-brand p {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 4px;
+    }
+
+    .field { margin-bottom: 14px; animation: slideUp 0.5s ease both; }
+    .field:nth-child(1) { animation-delay: 0.15s; }
+    .field:nth-child(2) { animation-delay: 0.25s; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 6px;
+      letter-spacing: 0.3px;
+    }
+    .field input {
+      width: 100%;
+      height: 50px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 0 16px;
+      font-size: 15px;
+      color: var(--text);
+      background: #fafbfc;
+      transition: border-color 0.25s, box-shadow 0.25s, transform 0.15s;
+    }
+    .field input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(26,39,68,0.12);
+      background: #fff;
+      transform: scale(1.01);
+    }
+    .field input::placeholder { color: #ccc; }
+
+    .opt-row {
+      display: flex;
+      align-items: center;
+      margin: 12px 0 20px;
+      animation: slideUp 0.5s ease 0.3s both;
+    }
+    .opt-row label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+    .opt-row input[type="checkbox"] {
+      width: 16px; height: 16px;
+      accent-color: var(--primary);
+    }
+
+    .btn-primary {
+      width: 100%;
+      height: 52px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      animation: slideUp 0.5s ease 0.35s both;
+    }
+    .btn-primary:active { transform: scale(0.97); background: var(--primary-light); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .error-msg {
+      color: var(--error);
+      font-size: 13px;
+      text-align: center;
+      margin-top: 14px;
+      min-height: 20px;
+      transition: opacity 0.2s;
+    }
+    .error-msg.shake { animation: shake 0.4s ease; }
+
+    /* ══════════════════════════════════════════════
+       CARD SCREEN
+    ══════════════════════════════════════════════ */
+    #card-screen {
+      background: linear-gradient(160deg, #1a2744 0%, #2a4a7a 50%, #1a2744 100%);
+      padding: var(--safe-top) 16px calc(20px + var(--safe-bottom));
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 4px 12px;
+    }
+    .top-bar h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .top-bar .sub { font-size: 11px; color: rgba(255,255,255,0.5); }
+
+    .top-icons { display: flex; gap: 8px; }
+
+    .btn-icon {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn-icon:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
+
+    /* ── ID Card ── */
+    .id-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      animation: slideUp 0.45s ease 0.1s both;
+      transition: background 0.4s;
+    }
+
+    .card-top-banner {
+      background: var(--primary);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-top-banner h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+    .card-top-banner span {
+      font-size: 10px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    .card-main { padding: 20px; }
+
+    .card-visual {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 20px;
+      align-items: flex-start;
+    }
+
+    .photo-box {
+      width: 108px;
+      height: 144px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #f0f0f0;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .photo-box img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      animation: scaleIn 0.4s ease;
+    }
+    .photo-placeholder {
+      width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ccc;
+      font-size: 36px;
+    }
+
+    .qr-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .qr-wrapper {
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .qr-wrapper:active { transform: scale(0.95); }
+
+    .qr-wrapper img {
+      width: 144px; height: 144px;
+      border-radius: 8px;
+      border: 2px solid #f0f0f0;
+      transition: border-color 0.4s;
+    }
+    .qr-wrapper img.refreshing {
+      animation: qrRefresh 0.35s ease;
+    }
+
+    .timer-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .timer-ring {
+      width: 42px; height: 42px;
+      position: relative;
+    }
+    .timer-ring svg {
+      width: 100%; height: 100%;
+      transform: rotate(-90deg);
+    }
+    .timer-ring .track {
+      fill: none;
+      stroke: #eee;
+      stroke-width: 3;
+    }
+    .timer-ring .fill {
+      fill: none;
+      stroke: var(--primary);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 100.53;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 1s linear, stroke 0.3s;
+    }
+    .timer-ring .fill.warn { stroke: var(--error); }
+    .timer-ring .num {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--primary);
+      font-variant-numeric: tabular-nums;
+      transition: color 0.3s;
+    }
+    .timer-ring .num.warn { color: var(--error); }
+    .timer-ring .num.pulse { animation: countdownPulse 0.3s ease; }
+
+    .btn-refresh {
+      font-size: 11px;
+      color: var(--accent);
+      background: none;
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 5px 14px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn-refresh:active { background: rgba(212,168,67,0.15); transform: scale(0.95); }
+
+    .info-list {
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      transition: border-color 0.4s;
+    }
+    .info-row {
+      display: flex;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #f5f5f5;
+      transition: border-color 0.4s;
+      animation: slideUp 0.4s ease both;
+    }
+    .info-row:nth-child(1) { animation-delay: 0.2s; }
+    .info-row:nth-child(2) { animation-delay: 0.28s; }
+    .info-row:nth-child(3) { animation-delay: 0.36s; }
+    .info-row:nth-child(4) { animation-delay: 0.44s; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label {
+      width: 64px;
+      font-size: 12px;
+      color: var(--text-sub);
+      flex-shrink: 0;
+      transition: color 0.4s;
+    }
+    .info-value {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      transition: color 0.4s;
+    }
+
+    .card-footer-banner {
+      background: var(--primary);
+      padding: 12px 20px;
+      text-align: center;
+    }
+    .card-footer-banner p {
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 2px;
+      font-weight: 600;
+    }
+
+    .bottom-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: auto;
+      animation: slideUp 0.45s ease 0.3s both;
+    }
+    .btn-action {
+      flex: 1;
+      height: 50px;
+      border-radius: 14px;
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn-action:active { transform: scale(0.96); }
+    .btn-action.primary {
+      background: var(--accent);
+      color: var(--primary);
+    }
+    .btn-action.primary:active { background: #c09930; }
+
+    /* ══════════════════════════════════════════════
+       QR FULLSCREEN OVERLAY
+    ══════════════════════════════════════════════ */
+    .qr-fullscreen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 40px;
+    }
+    .qr-fullscreen.open {
+      display: flex;
+      animation: fadeIn 0.25s ease;
+    }
+    .qr-fullscreen img {
+      width: min(80vw, 300px);
+      height: min(80vw, 300px);
+      border-radius: 14px;
+      background: #fff;
+      padding: 14px;
+      animation: scaleIn 0.3s ease 0.1s both;
+    }
+    .qr-fullscreen .name {
+      color: #fff;
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .qr-fullscreen .info {
+      color: rgba(255,255,255,0.5);
+      font-size: 13px;
+    }
+    .qr-fullscreen .close-btn {
+      position: absolute;
+      top: calc(16px + var(--safe-top));
+      right: 16px;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .qr-fullscreen .close-btn:active { background: rgba(255,255,255,0.25); }
+
+    .qr-expired-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      border-radius: 8px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.6;
+      gap: 4px;
+    }
+    .qr-expired-overlay.show { display: flex; animation: fadeIn 0.3s ease; }
+    .qr-expired-overlay .ico { font-size: 22px; }
+
+    .toast {
+      position: fixed;
+      bottom: calc(80px + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(30,30,30,0.92);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      pointer-events: none;
+      z-index: 300;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (min-width: 500px) {
+      #card-screen { align-items: center; }
+      .id-card, .bottom-actions { max-width: 420px; width: 100%; }
+      .top-bar { max-width: 420px; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ LOGIN ═══ -->
+  <div id="login-screen" class="screen active">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="logo-icon">🎓</div>
+        <h1>부산가톨릭대학교</h1>
+        <p>CUP 모바일 학생증</p>
+      </div>
+      <form id="login-form">
+        <div class="field">
+          <label>학번</label>
+          <input type="text" id="userId" placeholder="학번을 입력하세요" inputmode="numeric" autocomplete="username">
+        </div>
+        <div class="field">
+          <label>비밀번호</label>
+          <input type="password" id="userPw" placeholder="비밀번호를 입력하세요" autocomplete="current-password">
+        </div>
+        <div class="opt-row">
+          <label><input type="checkbox" id="saveId"> 학번 저장</label>
+        </div>
+        <button type="submit" class="btn-primary" id="btn-login">로그인</button>
+      </form>
+      <p class="error-msg" id="login-error"></p>
+    </div>
+  </div>
+
+  <!-- ═══ CARD ═══ -->
+  <div id="card-screen" class="screen">
+    <div class="top-bar">
+      <div>
+        <h2>모바일 학생증</h2>
+        <div class="sub">부산가톨릭대학교</div>
+      </div>
+      <div class="top-icons">
+        <button class="btn-icon" id="btn-logout" title="로그아웃">⏻</button>
+      </div>
+    </div>
+
+    <div class="id-card">
+      <div class="card-top-banner">
+        <h3>STUDENT ID CARD</h3>
+        <span>부산가톨릭대학교</span>
+      </div>
+      <div class="card-main">
+        <div class="card-visual">
+          <div class="photo-box">
+            <img id="student-photo" alt="학생 사진" style="display:none">
+            <div class="photo-placeholder" id="photo-placeholder">👤</div>
+          </div>
+          <div class="qr-section">
+            <div class="qr-wrapper" id="qr-tap-area">
+              <img id="qr-image" alt="QR코드">
+              <div class="qr-expired-overlay" id="qr-expired">
+                <span class="ico">⏱</span>
+                <span>QR 만료됨</span>
+                <span style="font-weight:400;font-size:11px">탭하여 새로고침</span>
+              </div>
+            </div>
+            <div class="timer-row">
+              <div class="timer-ring">
+                <svg viewBox="0 0 36 36">
+                  <circle class="track" cx="18" cy="18" r="16"/>
+                  <circle class="fill" id="timer-fill" cx="18" cy="18" r="16"/>
+                </svg>
+                <div class="num" id="timer-num">60</div>
+              </div>
+              <button class="btn-refresh" id="btn-refresh">새로고침</button>
+            </div>
+          </div>
+        </div>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">이름</span>
+            <span class="info-value" id="info-name">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">학번</span>
+            <span class="info-value" id="info-id">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">학과</span>
+            <span class="info-value" id="info-dept">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">생년월일</span>
+            <span class="info-value" id="info-birth">-</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer-banner">
+        <p>부산가톨릭대학교 총장</p>
+      </div>
+    </div>
+
+    <div class="bottom-actions">
+      <button class="btn-action primary" id="btn-fullscreen">🔍 QR 크게보기</button>
+    </div>
+  </div>
+
+  <!-- ═══ QR FULLSCREEN ═══ -->
+  <div class="qr-fullscreen" id="qr-fullscreen">
+    <button class="close-btn" id="qr-fs-close">✕</button>
+    <div class="name" id="fs-name">-</div>
+    <div class="info" id="fs-info">-</div>
+    <img id="fs-qr-img" alt="QR코드">
+    <div class="timer-row" style="margin-top:8px">
+      <div class="timer-ring">
+        <svg viewBox="0 0 36 36">
+          <circle class="track" cx="18" cy="18" r="16"/>
+          <circle class="fill" id="fs-timer-fill" cx="18" cy="18" r="16"/>
+        </svg>
+        <div class="num" id="fs-timer-num">60</div>
+      </div>
+      <button class="btn-refresh" id="fs-refresh" style="color:#fff;border-color:rgba(255,255,255,0.3)">새로고침</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API = location.origin;
+    const $ = s => document.getElementById(s);
+    const CIRC = 2 * Math.PI * 16;
+
+    let sid = localStorage.getItem('cup_sid') || null;
+    let student = null;
+    let timer = null;
+    let seconds = 60;
+
+    // ── Init ──
+    (function init() {
+      const saved = localStorage.getItem('cup_uid');
+      if (saved) { $('userId').value = saved; $('saveId').checked = true; }
+      switchTo(sid ? 'card' : 'login');
+      if (sid) loadQR();
+    })();
+
+    // ── Screen switch (with animation) ──
+    function switchTo(name) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const target = $(name + '-screen');
+      // Force reflow for animation restart
+      void target.offsetWidth;
+      target.classList.add('active');
+    }
+
+    // ── Login ──
+    $('login-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const uid = $('userId').value.trim();
+      const pw = $('userPw').value;
+      if (!uid || !pw) return showErr('아이디와 비밀번호를 입력하세요.');
+
+      const btn = $('btn-login');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>로그인 중…';
+      showErr('');
+
+      try {
+        const r = await fetch(API + '/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: uid, userPw: pw }),
+        });
+        const d = await r.json();
+        if (!d.success) { showErr(d.message); return; }
+
+        sid = d.sessionId;
+        student = d.student;
+        localStorage.setItem('cup_sid', sid);
+        if ($('saveId').checked) localStorage.setItem('cup_uid', uid);
+        else localStorage.removeItem('cup_uid');
+
+        applyStudent();
+        switchTo('card');
+        loadQR();
+      } catch {
+        showErr('네트워크 오류');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '로그인';
+      }
+    });
+
+    function showErr(m) {
+      const el = $('login-error');
+      el.textContent = m;
+      el.classList.remove('shake');
+      void el.offsetWidth;
+      el.classList.add('shake');
+    }
+
+    // ── Student info ──
+    function applyStudent() {
+      if (!student) return;
+      $('info-name').textContent = student.name || '-';
+      $('info-id').textContent = student.studentId || '-';
+      $('info-dept').textContent = student.department || '-';
+      $('info-birth').textContent = student.birthDate || '-';
+      $('fs-name').textContent = student.name || '';
+      $('fs-info').textContent = (student.studentId || '') + ' · ' + (student.department || '');
+
+      const img = $('student-photo');
+      if (student.photoUrl) {
+        img.src = student.photoUrl;
+        img.onload = () => { img.style.display = ''; $('photo-placeholder').style.display = 'none'; };
+      }
+    }
+
+    // ── QR Load ──
+    async function loadQR() {
+      if (!sid) return;
+      try {
+        const r = await fetch(API + '/api/qr?sessionId=' + sid);
+        if (!r.ok) {
+          if (r.status === 401) { toast('세션 만료. 다시 로그인하세요.'); logout(); return; }
+          throw new Error();
+        }
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+
+        const qrImg = $('qr-image');
+        const fsImg = $('fs-qr-img');
+        qrImg.src = url;
+        fsImg.src = url;
+
+        // Refresh animation
+        qrImg.classList.remove('refreshing');
+        void qrImg.offsetWidth;
+        qrImg.classList.add('refreshing');
+
+        $('qr-expired').classList.remove('show');
+        startTimer();
+      } catch {
+        toast('QR 불러오기 실패');
+      }
+    }
+
+    // ── Timer ──
+    function startTimer() {
+      clearInterval(timer);
+      seconds = 60;
+      updateRing();
+      timer = setInterval(() => {
+        seconds--;
+        updateRing();
+        if (seconds <= 0) {
+          clearInterval(timer);
+          $('qr-expired').classList.add('show');
+        }
+        // Pulse animation on each second
+        for (const num of [$('timer-num'), $('fs-timer-num')]) {
+          num.classList.remove('pulse');
+          void num.offsetWidth;
+          num.classList.add('pulse');
+        }
+      }, 1000);
+    }
+
+    function updateRing() {
+      const pct = seconds / 60;
+      const offset = CIRC * (1 - pct);
+      const warn = seconds <= 10;
+      for (const fill of [$('timer-fill'), $('fs-timer-fill')]) {
+        fill.style.strokeDashoffset = offset;
+        fill.classList.toggle('warn', warn);
+      }
+      for (const num of [$('timer-num'), $('fs-timer-num')]) {
+        num.textContent = seconds;
+        num.classList.toggle('warn', warn);
+      }
+    }
+
+    // ── QR interactions ──
+    $('qr-tap-area').addEventListener('click', () => {
+      if (seconds <= 0) loadQR();
+      else openFullscreen();
+    });
+    $('btn-refresh').addEventListener('click', loadQR);
+    $('btn-fullscreen').addEventListener('click', openFullscreen);
+    $('fs-refresh').addEventListener('click', loadQR);
+    $('qr-fs-close').addEventListener('click', closeFullscreen);
+    $('qr-fullscreen').addEventListener('click', e => {
+      if (e.target === $('qr-fullscreen')) closeFullscreen();
+    });
+
+    function openFullscreen() {
+      $('qr-fullscreen').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeFullscreen() {
+      $('qr-fullscreen').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    // ── Logout ──
+    $('btn-logout').addEventListener('click', () => {
+      if (sid) fetch(API + '/api/logout', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: sid }),
+      }).catch(() => {});
+      logout();
+    });
+
+    function logout() {
+      sid = null; student = null;
+      localStorage.removeItem('cup_sid');
+      clearInterval(timer);
+      $('userPw').value = '';
+      switchTo('login');
+    }
+
+
+    // ── Toast ──
+    function toast(m) {
+      const t = $('toast');
+      t.textContent = m;
+      t.classList.add('show');
+      clearTimeout(t._t);
+      t._t = setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // ── Enter key on password ──
+    $('userPw').addEventListener('keydown', e => {
+      if (e.key === 'Enter') $('login-form').requestSubmit();
+    });
+  </script>
+</body>
+</html>

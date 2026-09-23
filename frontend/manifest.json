@@ -1,0 +1,16 @@
+{
+  "name": "CUP 모바일 학생증",
+  "short_name": "CUP 학생증",
+  "description": "부산가톨릭대학교 모바일 학생증",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a2744",
+  "theme_color": "#1a2744",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

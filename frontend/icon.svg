@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#1a2744"/>
+  <text x="256" y="220" text-anchor="middle" font-family="Arial,sans-serif" font-size="140" font-weight="bold" fill="#d4a843">CUP</text>
+  <text x="256" y="320" text-anchor="middle" font-family="Arial,sans-serif" font-size="48" fill="#ffffff">학생증</text>
+  <text x="256" y="380" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" fill="rgba(255,255,255,0.5)">Student ID</text>
+</svg>
